@@ -8,7 +8,7 @@ defmodule Protobuf.Builder do
 
   def define(msgs, %Config{inject: inject} = config) do
     # When injecting, use_in is not available, so we don't need to use @before_compile
-    if inject do
+    if true do
       quote location: :keep do
         Module.register_attribute __MODULE__, :use_in, accumulate: true
         import unquote(__MODULE__), only: [use_in: 2]

@@ -6,7 +6,7 @@ defmodule Protobuf.Import.Test do
   end
 
   test "can import protos" do
-    msg = WebsocketServerContainer.AuthorizationServerMessage.new(next_synchronization_token: "2")
+    msg = WebsocketServerContainer.Authorization.AuthorizationServerMessage.new(next_synchronization_token: "2")
     assert %{next_synchronization_token: "2"} = msg
   end
 end
