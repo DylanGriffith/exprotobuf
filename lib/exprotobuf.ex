@@ -12,11 +12,14 @@ defmodule Protobuf do
     opts = opts |> Enum.into %{}
     files = Path.wildcard(elem(Code.eval_quoted(opts[:from]), 0))
 
-    Enum.map files, fn (file) ->
+    config = %Config{namespace: __CALLER__.module, schema: nil, inject: true}
+    results = Enum.flat_map files, fn (file) ->
       schema = File.read!(file)
       config = %Config{namespace: __CALLER__.module, schema: schema, inject: true, from_file: file}
-      config |> parse(__CALLER__) |> Builder.define(config)
+      config |> parse(__CALLER__)
     end
+
+    results |> Enum.uniq |> Builder.define(config)
   end
 
   # Parse and fix namespaces of parsed types

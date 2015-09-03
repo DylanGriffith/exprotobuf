@@ -7,26 +7,14 @@ defmodule Protobuf.Builder do
   import Protobuf.DefineMessage, only: [def_message: 3]
 
   def define(msgs, %Config{inject: inject} = config) do
-    # When injecting, use_in is not available, so we don't need to use @before_compile
-    if true do
-      quote location: :keep do
-        Module.register_attribute __MODULE__, :use_in, accumulate: true
-        import unquote(__MODULE__), only: [use_in: 2]
+    quote location: :keep do
+      Module.register_attribute __MODULE__, :use_in, accumulate: true
+      import unquote(__MODULE__), only: [use_in: 2]
 
-        @config         unquote(Macro.escape Map.to_list(%{config | :schema => nil}))
-        @msgs           unquote(Macro.escape msgs)
-        contents = unquote(__MODULE__).generate(@msgs, @config)
-        Module.eval_quoted __MODULE__, contents, [], __ENV__
-      end
-    else
-      quote do
-        Module.register_attribute __MODULE__, :use_in, accumulate: true
-        import unquote(__MODULE__), only: [use_in: 2]
-
-        @config         unquote(Macro.escape Map.to_list(%{config | :schema => nil}))
-        @msgs           unquote(Macro.escape msgs)
-        @before_compile unquote(__MODULE__)
-      end
+      @config         unquote(Macro.escape Map.to_list(%{config | :schema => nil}))
+      @msgs           unquote(Macro.escape msgs)
+      contents = unquote(__MODULE__).generate(@msgs, @config)
+      Module.eval_quoted __MODULE__, contents, [], __ENV__
     end
   end
 
