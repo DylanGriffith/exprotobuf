@@ -23,14 +23,15 @@ defmodule Protobuf do
   end
 
   # Parse and fix namespaces of parsed types
-  defp parse(%Config{namespace: ns, schema: schema, inject: inject, from_file: nil}, _) do
-    Parser.parse!(schema) |> namespace_types(ns, inject)
+  defp parse(%Config{schema: schema, inject: inject, from_file: nil}, _) do
+    Parser.parse!(schema) |> namespace_types(inject)
   end
-  defp parse(%Config{namespace: ns, schema: schema, inject: inject, from_file: file}, caller) do
+  defp parse(%Config{schema: schema, inject: inject, from_file: file}, caller) do
     {path, _} = Code.eval_quoted(file, [], caller)
     path      = Path.expand(path) |> Path.dirname
     opts      = [imports: [path], use_packages: true]
-    Parser.parse!(schema, opts) |> namespace_types(ns, inject)
+
+    Parser.parse!(schema, opts) |> namespace_types(inject)
   end
 
   # Find the package namespace
@@ -43,40 +44,28 @@ defmodule Protobuf do
     end)
   end
 
-  defp namespace_types(parsed, ns, inject) do
+  defp namespace_types(parsed, inject) do
     # Apply namespace to top-level types
-    detect_package(parsed) |> namespace_types(parsed, ns, inject)
+    detect_package(parsed) |> namespace_types(parsed, inject)
   end
 
   # Apply namespace to top-level types
-  defp namespace_types(package, parsed, ns, inject) do
+  defp namespace_types(package, parsed, inject) do
     for {{type, name}, fields} <- parsed do
-      if inject do
-        if false && package do
-          {{type, :"Elixir.#{package}.#{name |> normalize_name}"}, namespace_fields(type, fields, ns)}
-        else
-          {{type, :"Elixir.#{name |> normalize_name}"}, namespace_fields(type, fields, ns)}
-        end
-      else
-        if false && package do
-          {{type, :"#{ns}.#{package}.#{name |> normalize_name}"}, namespace_fields(type, fields, ns)}
-        else
-          {{type, :"#{ns}.#{name |> normalize_name}"}, namespace_fields(type, fields, ns)}
-        end
-      end
+      {{type, :"Elixir.#{name |> normalize_name}"}, fix_fields(type, fields)}
     end
   end
 
   # Apply namespace to nested types
-  defp namespace_fields(:msg, fields, ns), do: Enum.map(fields, &namespace_fields(&1, ns))
-  defp namespace_fields(_, fields, _),     do: fields
-  defp namespace_fields(field, ns) when not is_map(field) do
-    field |> Utils.convert_from_record(Field) |> namespace_fields(ns)
+  defp fix_fields(:msg, fields), do: Enum.map(fields, &fix_fields(&1))
+  defp fix_fields(_, fields, _),     do: fields
+  defp fix_fields(field) when not is_map(field) do
+    field |> Utils.convert_from_record(Field) |> fix_fields
   end
-  defp namespace_fields(%Field{type: {type, name}} = field, ns) do
-    %{field | :type => {type, :"#{ns}.#{name |> normalize_name}"}}
+  defp fix_fields(%Field{type: {type, name}} = field) do
+    %{field | :type => {type, :"#{Elixir}.#{name |> normalize_name}"}}
   end
-  defp namespace_fields(%Field{} = field, _ns) do
+  defp fix_fields(%Field{} = field) do
     field
   end
 
