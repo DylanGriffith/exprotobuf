@@ -58,7 +58,7 @@ defmodule Protobuf do
 
   # Apply namespace to nested types
   defp fix_fields(:msg, fields), do: Enum.map(fields, &fix_fields(&1))
-  defp fix_fields(_, fields, _),     do: fields
+  defp fix_fields(_, fields), do: fields
   defp fix_fields(field) when not is_map(field) do
     field |> Utils.convert_from_record(Field) |> fix_fields
   end
